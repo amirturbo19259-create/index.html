@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#01050a">
+<title>DR. ZARIF // NEURAL CORE</title>
+
+<style>
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#01050a;
+}
+
+body{
+  font-family:"Courier New",monospace;
+  color:#eafcff;
+  touch-action:none;
+}
+
+#app{
+  position:relative;
+  width:100vw;
+  height:100dvh;
+  min-height:100vh;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(0,95,125,.10), transparent 30%),
+    linear-gradient(#01050a,#01050a);
+}
+
+canvas{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:block;
+}
+
+.hud{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
+
+.hud::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:radial-gradient(ellipse at 50% 38%, transparent 42%, rgba(1,5,10,.68) 100%);
+}
+
+.header{
+  position:absolute;
+  top:3.2vh;
+  left:4.5vw;
+  right:4.5vw;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:clamp(10px,3.1vw,15px);
+  letter-spacing:.04em;
+  white-space:nowrap;
+}
+
+.header .left{
+  color:#00e5ff;
+  font-weight:700;
+}
+
+.header .right{
+  color:#39788b;
+}
+
+.activity{
+  position:absolute;
+  top:6.8vh;
+  left:4.5vw;
+  color:#285b6c;
+  font-size:clamp(8px,2.5vw,12px);
+  white-space:nowrap;
+}
+
+.scan{
+  position:absolute;
+  top:9.3vh;
+  left:50%;
+  transform:translateX(-50%);
+  width:92vw;
+  text-align:center;
+  color:#15566b;
+  font-size:clamp(8px,2.35vw,12px);
+  white-space:nowrap;
+}
+
+.core-label{
+  position:absolute;
+  left:50%;
+  top:40vh;
+  transform:translate(-50%,-50%);
+  color:#39788b;
+  font-size:clamp(8px,2.6vw,12px);
+  letter-spacing:.08em;
+  white-space:nowrap;
+}
+
+.main{
+  position:absolute;
+  top:47vh;
+  left:50%;
+  transform:translateX(-50%);
+  width:94vw;
+  max-width:520px;
+  text-align:center;
+}
+
+.title{
+  margin:0;
+  color:#eafcff;
+  font-family:Arial,sans-serif;
+  font-size:clamp(28px,10.5vw,52px);
+  line-height:1;
+  font-weight:800;
+  letter-spacing:.015em;
+  white-space:nowrap;
+  text-shadow:0 0 22px rgba(140,247,255,.16);
+}
+
+.motto{
+  margin-top:2.2vh;
+  color:#00e5ff;
+  font-size:clamp(15px,5vw,26px);
+  line-height:1;
+  font-weight:700;
+  white-space:nowrap;
+}
+
+.divider{
+  width:42vw;
+  max-width:230px;
+  height:1px;
+  margin:2.4vh auto 1.8vh;
+  background:#0b6075;
+  box-shadow:0 0 8px rgba(0,229,255,.18);
+}
+
+.subtitle{
+  color:#39788b;
+  font-size:clamp(7px,2.2vw,11px);
+  letter-spacing:.03em;
+  white-space:nowrap;
+}
+
+.med-data{
+  position:absolute;
+  right:5vw;
+  top:24vh;
+  text-align:right;
+  color:#225c6d;
+  font-size:clamp(8px,2.5vw,12px);
+  line-height:1.8;
+}
+
+.ecg-box{
+  position:absolute;
+  left:4.5vw;
+  right:4.5vw;
+  bottom:10.8vh;
+  height:10vh;
+}
+
+.ecg-label{
+  color:#276477;
+  font-size:clamp(8px,2.5vw,12px);
+  margin-bottom:3px;
+}
+
+#ecg{
+  width:100%;
+  height:55px;
+  display:block;
+}
+
+.bottom{
+  position:absolute;
+  bottom:3.2vh;
+  left:4.5vw;
+  right:4.5vw;
+  display:flex;
+  justify-content:space-between;
+  color:#39788b;
+  font-size:clamp(9px,2.8vw,14px);
+  font-weight:700;
+}
+
+.corner{
+  position:absolute;
+  width:20px;
+  height:20px;
+  opacity:.8;
+}
+.c1{left:2.5vw;top:2.5vh;border-left:1px solid #164658;border-top:1px solid #164658}
+.c2{right:2.5vw;top:2.5vh;border-right:1px solid #164658;border-top:1px solid #164658}
+.c3{left:2.5vw;bottom:2.5vh;border-left:1px solid #164658;border-bottom:1px solid #164658}
+.c4{right:2.5vw;bottom:2.5vh;border-right:1px solid #164658;border-bottom:1px solid #164658}
+
+@media (max-height:650px){
+  .core-label{top:35vh}
+  .main{top:42vh}
+  .ecg-box{bottom:11vh}
+}
+
+@media (min-width:700px){
+  .main{max-width:600px}
+}
+</style>
+</head>
+
+<body>
+<div id="app">
+  <canvas id="scene"></canvas>
+
+  <div class="hud">
+    <div class="corner c1"></div>
+    <div class="corner c2"></div>
+    <div class="corner c3"></div>
+    <div class="corner c4"></div>
+
+    <div class="header">
+      <div class="left">NEURAL CORE</div>
+      <div class="right">SYSTEM ONLINE</div>
+    </div>
+
+    <div class="activity" id="activity">
+      SYNAPTIC ACTIVITY 98.0%
+    </div>
+
+    <div class="scan" id="scan">
+      SCANNING NEURAL ACTIVITY
+    </div>
+
+    <div class="med-data">
+      <div>NEURO</div>
+      <div>BIO / 01</div>
+    </div>
+
+    <div class="core-label">NEURAL PERFORMANCE // ORBIT VIEW</div>
+
+    <main class="main">
+      <h1 class="title">DR. ZARIF</h1>
+      <div class="motto">YOU CAN DO IT</div>
+      <div class="divider"></div>
+      <div class="subtitle">NEURAL POTENTIAL // UNLOCKED</div>
+    </main>
+
+    <div class="ecg-box">
+      <div class="ecg-label">ECG // BIO SIGNAL</div>
+      <canvas id="ecg"></canvas>
+    </div>
+
+    <div class="bottom">
+      <span>FOCUS</span>
+      <span>DISCIPLINE</span>
+      <span>DREAM</span>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   DOM / 2D ECG (unchanged approach from the original HUD)
+   ============================================================ */
+var ecgCanvas = document.getElementById("ecg");
+var ecg = ecgCanvas.getContext("2d");
+var sceneCanvas = document.getElementById("scene");
+
+var frame = 0;
+var DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+function line2d(c,x1,y1,x2,y2,color,width){
+  c.beginPath();
+  c.moveTo(x1,y1);
+  c.lineTo(x2,y2);
+  c.strokeStyle = color;
+  c.lineWidth = width || 1;
+  c.stroke();
+}
+
+function drawECG(){
+  var w = ecgCanvas.clientWidth;
+  var h = ecgCanvas.clientHeight;
+  if(!w || !h) return;
+  ecg.clearRect(0,0,w,h);
+
+  var base = h*.65;
+  line2d(ecg,0,base,w,base,"#0b3543",1);
+
+  ecg.beginPath();
+  var total = 150;
+
+  for(var i=0;i<total;i++){
+    var x = i/(total-1)*w;
+    var pos = (i+Math.floor(frame*.7))%38;
+    var off = 0;
+
+    if(pos===12) off=-6;
+    else if(pos===13) off=12;
+    else if(pos===14) off=-30;
+    else if(pos===15) off=8;
+    else if(pos===16) off=-4;
+    else off=Math.sin(i*.45+frame*.025)*.5;
+
+    var y = base+off;
+
+    if(i===0) ecg.moveTo(x,y);
+    else ecg.lineTo(x,y);
+  }
+
+  ecg.strokeStyle = "#08e0ff";
+  ecg.lineWidth = 1.3;
+  ecg.shadowBlur = 6;
+  ecg.shadowColor = "#00e5ff";
+  ecg.stroke();
+  ecg.shadowBlur = 0;
+}
+
+var scanTexts = [
+  "SCANNING NEURAL ACTIVITY",
+  "SYNAPTIC SIGNAL DETECTED",
+  "CORTICAL NETWORK ACTIVE",
+  "BIOELECTRIC FIELD STABLE",
+  "DEEP SPACE UPLINK STABLE"
+];
+
+var activityEl = document.getElementById("activity");
+var scanEl = document.getElementById("scan");
+
+function updateHUD(){
+  var activity = 98 + Math.sin(frame*.03);
+  activityEl.textContent = "SYNAPTIC ACTIVITY " + activity.toFixed(1) + "%";
+  scanEl.textContent = scanTexts[Math.floor(frame/70)%scanTexts.length];
+}
+
+function resizeECG(){
+  var r = ecgCanvas.getBoundingClientRect();
+  ecgCanvas.width = Math.floor(r.width*DPR);
+  ecgCanvas.height = Math.floor(r.height*DPR);
+  ecg.setTransform(DPR,0,0,DPR,0,0);
+}
+
+/* ============================================================
+   3D SCENE (Three.js)
+   ============================================================ */
+var renderer, scene, camera, clock;
+var W=0, H=0, cameraDistance=7.6;
+var lookTarget, pointerTX=0, pointerTY=0, parallaxX=0, parallaxY=0;
+
+var starGroup, starPointsLayers=[];
+var neuralGroup, nodeData=[], connections=[], nodeSprites=[], pulses=[];
+var core;
+var shootingStars=[];
+
+var glowTexHard, glowTexSoft, glowTexNebula;
+
+function makeGlowTexture(inner, mid, size){
+  size = size || 128;
+  var c = document.createElement("canvas");
+  c.width = c.height = size;
+  var g = c.getContext("2d");
+  var grad = g.createRadialGradient(size/2,size/2,0,size/2,size/2,size/2);
+  grad.addColorStop(0, inner);
+  grad.addColorStop(.4, mid);
+  grad.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = grad;
+  g.fillRect(0,0,size,size);
+  var tex = new THREE.CanvasTexture(c);
+  tex.needsUpdate = true;
+  return tex;
+}
+
+function initTextures(){
+  glowTexHard = makeGlowTexture("rgba(255,255,255,1)", "rgba(140,245,255,.65)", 64);
+  glowTexSoft = makeGlowTexture("rgba(225,252,255,1)", "rgba(0,180,210,.55)", 128);
+  glowTexNebula = makeGlowTexture("rgba(140,210,230,.5)", "rgba(40,90,150,.16)", 256);
+}
+
+function initRenderer(){
+  renderer = new THREE.WebGLRenderer({canvas:sceneCanvas, antialias:true, powerPreference:"high-performance"});
+  renderer.setPixelRatio(DPR);
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.25;
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x01050a);
+  scene.fog = new THREE.FogExp2(0x01050a, 0.014);
+
+  camera = new THREE.PerspectiveCamera(50, 1, 0.1, 120);
+  camera.position.set(0, 1.1, cameraDistance);
+  lookTarget = new THREE.Vector3(0, -1.1, 0);
+  camera.lookAt(lookTarget);
+}
+
+function createStarfield(){
+  starGroup = new THREE.Group();
+  scene.add(starGroup);
+
+  var layers = [
+    {count:1300, radius:26, size:0.05, opacity:0.5, speed:0.25},
+    {count:460,  radius:18, size:0.08, opacity:0.68, speed:0.32},
+    {count:85,   radius:12, size:0.14, opacity:0.9, speed:0.4}
+  ];
+
+  for(var l=0;l<layers.length;l++){
+    var layer = layers[l];
+    var positions = new Float32Array(layer.count*3);
+    var colors = new Float32Array(layer.count*3);
+
+    for(var i=0;i<layer.count;i++){
+      var u = Math.random(), v = Math.random();
+      var theta = u*2*Math.PI;
+      var phi = Math.acos(2*v-1);
+      var rr = layer.radius*(0.5+0.5*Math.random());
+
+      positions[i*3]   = rr*Math.sin(phi)*Math.cos(theta);
+      positions[i*3+1] = rr*Math.sin(phi)*Math.sin(theta);
+      positions[i*3+2] = rr*Math.cos(phi);
+
+      var roll = Math.random();
+      var cr,cg,cb;
+      if(roll<0.08){ cr=1; cg=0.87; cb=0.64; }
+      else if(roll<0.55){ cr=0.66; cg=0.96; cb=1; }
+      else { cr=0.92; cg=0.99; cb=1; }
+      colors[i*3]=cr; colors[i*3+1]=cg; colors[i*3+2]=cb;
+    }
+
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(positions,3));
+    geo.setAttribute("color", new THREE.Float32BufferAttribute(colors,3));
+
+    var mat = new THREE.PointsMaterial({
+      size: layer.size,
+      map: glowTexHard,
+      transparent: true,
+      opacity: layer.opacity,
+      vertexColors: true,
+      sizeAttenuation: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    var pts = new THREE.Points(geo, mat);
+    starGroup.add(pts);
+    starPointsLayers.push({points:pts, base:layer.opacity, phase:Math.random()*Math.PI*2, speed:layer.speed});
+  }
+}
+
+function createNebula(){
+  var specs = [
+    {pos:[-6.5, 2.2, -15], scale:10, color:0x2c6f8f, opacity:0.16},
+    {pos:[7.5, -1.6, -19], scale:12, color:0x5a3a8f, opacity:0.12},
+    {pos:[-3.5, -3.4, -22], scale:9,  color:0x1c8f8a, opacity:0.14},
+    {pos:[4.5, 3.8, -17],  scale:8,  color:0x8a5a35, opacity:0.07}
+  ];
+  for(var i=0;i<specs.length;i++){
+    var s = specs[i];
+    var mat = new THREE.SpriteMaterial({
+      map: glowTexNebula, color:s.color, transparent:true,
+      opacity:s.opacity, blending:THREE.AdditiveBlending, depthWrite:false
+    });
+    var spr = new THREE.Sprite(mat);
+    spr.position.set(s.pos[0], s.pos[1], s.pos[2]);
+    spr.scale.setScalar(s.scale);
+    scene.add(spr);
+  }
+}
+
+function buildNodesAndConnections(){
+  var count = 46;
+  var rx=2.3, ry=1.35, rz=1.7;
+  var maxD = 1.4;
+
+  nodeData = [];
+  for(var i=0;i<count;i++){
+    var u = Math.random()*2-1;
+    var theta = Math.random()*Math.PI*2;
+    var r = Math.cbrt(Math.random());
+    var phi = Math.acos(u);
+    var sx = Math.sin(phi)*Math.cos(theta);
+    var sy = Math.sin(phi)*Math.sin(theta);
+    var sz = Math.cos(phi);
+
+    nodeData.push({
+      pos: new THREE.Vector3(sx*rx*r, sy*ry*r, sz*rz*r),
+      phase: Math.random()*Math.PI*2,
+      speed: 0.8+Math.random()*1.4,
+      baseScale: 0.15+Math.random()*0.11
+    });
+  }
+
+  connections = [];
+  for(var a=0;a<nodeData.length;a++){
+    var near = [];
+    for(var b=0;b<nodeData.length;b++){
+      if(a===b) continue;
+      var d = nodeData[a].pos.distanceTo(nodeData[b].pos);
+      if(d<maxD) near.push([d,b]);
+    }
+    near.sort(function(p,q){ return p[0]-q[0]; });
+    for(var k=0;k<Math.min(2,near.length);k++){
+      var j = near[k][1];
+      var lo = Math.min(a,j), hi = Math.max(a,j);
+      var exists = false;
+      for(var c=0;c<connections.length;c++){
+        if(connections[c][0]===lo && connections[c][1]===hi){ exists=true; break; }
+      }
+      if(!exists) connections.push([lo,hi]);
+    }
+  }
+}
+
+function createNetworkVisuals(){
+  neuralGroup = new THREE.Group();
+  scene.add(neuralGroup);
+
+  // connective tissue - one draw call for every line
+  var linePositions = [];
+  for(var i=0;i<connections.length;i++){
+    var pa = nodeData[connections[i][0]].pos;
+    var pb = nodeData[connections[i][1]].pos;
+    linePositions.push(pa.x,pa.y,pa.z, pb.x,pb.y,pb.z);
+  }
+  var lineGeo = new THREE.BufferGeometry();
+  lineGeo.setAttribute("position", new THREE.Float32BufferAttribute(linePositions,3));
+  var lineMat = new THREE.LineBasicMaterial({
+    color:0x18a4c2, transparent:true, opacity:0.5,
+    blending:THREE.AdditiveBlending, depthWrite:false
+  });
+  neuralGroup.add(new THREE.LineSegments(lineGeo, lineMat));
+
+  // nodes
+  var nodeMat = new THREE.SpriteMaterial({
+    map:glowTexSoft, color:0x9df2ff, transparent:true,
+    opacity:0.85, blending:THREE.AdditiveBlending, depthWrite:false
+  });
+  nodeSprites = [];
+  for(var n=0;n<nodeData.length;n++){
+    var spr = new THREE.Sprite(nodeMat);
+    spr.position.copy(nodeData[n].pos);
+    spr.scale.setScalar(nodeData[n].baseScale);
+    neuralGroup.add(spr);
+    nodeSprites.push(spr);
+  }
+
+  // traveling pulses
+  var pulseMat = new THREE.SpriteMaterial({
+    map:glowTexHard, color:0xeafcff, transparent:true,
+    opacity:0.95, blending:THREE.AdditiveBlending, depthWrite:false
+  });
+  pulses = [];
+  var pulseCount = Math.min(12, connections.length);
+  for(var p=0;p<pulseCount;p++){
+    var c = connections[Math.floor(Math.random()*connections.length)];
+    var sprite = new THREE.Sprite(pulseMat);
+    sprite.scale.setScalar(0.17);
+    neuralGroup.add(sprite);
+    pulses.push({a:c[0], b:c[1], p:Math.random(), speed:0.15+Math.random()*0.25, sprite:sprite});
+  }
+}
+
+function createCore(){
+  var group = new THREE.Group();
+
+  var ico = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.82, 1),
+    new THREE.MeshBasicMaterial({color:0x1fb8d6, wireframe:true, transparent:true, opacity:0.5})
+  );
+  group.add(ico);
+
+  var ico2 = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.55, 1),
+    new THREE.MeshBasicMaterial({color:0x0c6d86, wireframe:true, transparent:true, opacity:0.35})
+  );
+  group.add(ico2);
+
+  var inner = new THREE.Mesh(
+    new THREE.SphereGeometry(0.26, 24, 24),
+    new THREE.MeshBasicMaterial({color:0xdfffff})
+  );
+  group.add(inner);
+
+  var glow = new THREE.Sprite(new THREE.SpriteMaterial({
+    map:glowTexSoft, color:0x9df2ff, transparent:true,
+    opacity:0.85, blending:THREE.AdditiveBlending, depthWrite:false
+  }));
+  glow.scale.setScalar(2.6);
+  group.add(glow);
+
+  var ringDefs = [
+    {r:1.05, tilt:[1.1,0.3,0],  speed:0.35, opacity:0.5},
+    {r:1.28, tilt:[0.4,1.3,0.2],speed:-0.22, opacity:0.35},
+    {r:1.48, tilt:[1.4,0.9,0.6],speed:0.16, opacity:0.25}
+  ];
+  var rings = [];
+  for(var i=0;i<ringDefs.length;i++){
+    var rd = ringDefs[i];
+    var ring = new THREE.Mesh(
+      new THREE.TorusGeometry(rd.r, 0.006, 8, 96),
+      new THREE.MeshBasicMaterial({color:0x2fd8ef, transparent:true, opacity:rd.opacity})
+    );
+    ring.rotation.set(rd.tilt[0], rd.tilt[1], rd.tilt[2]);
+    ring.userData.speed = rd.speed;
+    group.add(ring);
+    rings.push(ring);
+  }
+
+  neuralGroup.add(group);
+  return {group:group, ico:ico, ico2:ico2, inner:inner, glow:glow, rings:rings};
+}
+
+function createShootingStars(){
+  shootingStars = [];
+  for(var i=0;i<2;i++){
+    var mat = new THREE.SpriteMaterial({
+      map:glowTexHard, color:0xdfffff, transparent:true,
+      opacity:0, blending:THREE.AdditiveBlending, depthWrite:false
+    });
+    var spr = new THREE.Sprite(mat);
+    spr.scale.setScalar(0.22);
+    scene.add(spr);
+    shootingStars.push({
+      sprite:spr, active:false, t:0, dur:1,
+      start:new THREE.Vector3(), end:new THREE.Vector3(),
+      nextAt: 3+Math.random()*7
+    });
+  }
+}
+
+function updateShootingStars(dt){
+  for(var i=0;i<shootingStars.length;i++){
+    var s = shootingStars[i];
+    if(!s.active){
+      s.nextAt -= dt;
+      if(s.nextAt<=0){
+        s.active = true;
+        s.t = 0;
+        s.dur = 0.8+Math.random()*0.6;
+        var side = Math.random()<0.5 ? -1 : 1;
+        s.start.set(side*10, 6+Math.random()*3, -6-Math.random()*6);
+        s.end.set(-side*10, -5-Math.random()*3, -10-Math.random()*6);
+      }
+    } else {
+      s.t += dt;
+      var p = Math.min(s.t/s.dur, 1);
+      s.sprite.position.lerpVectors(s.start, s.end, p);
+      s.sprite.material.opacity = Math.sin(p*Math.PI)*0.9;
+      if(p>=1){
+        s.active = false;
+        s.nextAt = 4+Math.random()*9;
+      }
+    }
+  }
+}
+
+function onPointerMove(x,y){
+  pointerTX = (x/window.innerWidth)*2-1;
+  pointerTY = (y/window.innerHeight)*2-1;
+}
+
+function computeCameraDistance(){
+  var aspect = W/H;
+  var d = 7.6;
+  if(aspect<1) d += (1-aspect)*4.5;
+  if(aspect>2) d -= 0.6;
+  return d;
+}
+
+function onResize(){
+  W = window.innerWidth;
+  H = window.innerHeight;
+  camera.aspect = W/H;
+  cameraDistance = computeCameraDistance();
+  camera.updateProjectionMatrix();
+  renderer.setSize(W,H);
+  resizeECG();
+}
+
+function updateCamera(t, dt){
+  var damp = Math.min(1, dt*2.2);
+  parallaxX += (pointerTX-parallaxX)*damp;
+  parallaxY += (pointerTY-parallaxY)*damp;
+
+  var sway = Math.sin(t*0.06)*0.9;
+  var bob  = Math.sin(t*0.045)*0.35;
+  var push = Math.cos(t*0.05)*0.5;
+
+  camera.position.x = sway + parallaxX*0.6;
+  camera.position.y = 1.05 + bob - parallaxY*0.35;
+  camera.position.z = cameraDistance + push;
+
+  lookTarget.set(parallaxX*0.35, -1.1 + parallaxY*0.15, 0);
+  camera.lookAt(lookTarget);
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  frame++;
+
+  var dt = Math.min(clock.getDelta(), 0.05);
+  var t = clock.elapsedTime;
+
+  updateCamera(t, dt);
+
+  neuralGroup.rotation.y += dt*0.10;
+  neuralGroup.rotation.x = Math.sin(t*0.05)*0.12;
+  var breathe = 1 + Math.sin(t*0.6)*0.02;
+  neuralGroup.scale.setScalar(breathe);
+
+  core.ico.rotation.y += dt*0.16;
+  core.ico.rotation.x += dt*0.05;
+  core.ico2.rotation.y -= dt*0.22;
+  core.ico2.rotation.z += dt*0.09;
+  for(var i=0;i<core.rings.length;i++){
+    core.rings[i].rotation.z += dt*core.rings[i].userData.speed;
+  }
+  var cw = (Math.sin(t*1.3)+1)/2;
+  core.inner.scale.setScalar(1+cw*0.18);
+  core.glow.scale.setScalar(2.4+cw*0.7);
+  core.glow.material.opacity = 0.55+cw*0.3;
+
+  for(var n=0;n<nodeSprites.length;n++){
+    var nd = nodeData[n];
+    var pulse = (Math.sin(t*nd.speed+nd.phase)+1)/2;
+    nodeSprites[n].scale.setScalar(nd.baseScale*(0.7+0.6*pulse));
+  }
+
+  for(var p=0;p<pulses.length;p++){
+    var pu = pulses[p];
+    pu.p += pu.speed*dt;
+    if(pu.p>=1){
+      var c = connections[Math.floor(Math.random()*connections.length)];
+      pu.a = c[0]; pu.b = c[1]; pu.p = 0;
+    }
+    pu.sprite.position.lerpVectors(nodeData[pu.a].pos, nodeData[pu.b].pos, pu.p);
+  }
+
+  for(var l=0;l<starPointsLayers.length;l++){
+    var layer = starPointsLayers[l];
+    layer.points.material.opacity = layer.base*(0.7+0.3*Math.sin(t*layer.speed+layer.phase));
+  }
+  starGroup.rotation.y += dt*0.006;
+  starGroup.rotation.x += dt*0.0015;
+
+  updateShootingStars(dt);
+
+  drawECG();
+  updateHUD();
+
+  renderer.render(scene, camera);
+}
+
+function init(){
+  initRenderer();
+  initTextures();
+  clock = new THREE.Clock();
+
+  createStarfield();
+  createNebula();
+  buildNodesAndConnections();
+  createNetworkVisuals();
+  core = createCore();
+  createShootingStars();
+
+  W = window.innerWidth;
+  H = window.innerHeight;
+  camera.aspect = W/H;
+  cameraDistance = computeCameraDistance();
+  camera.updateProjectionMatrix();
+  renderer.setSize(W,H);
+  resizeECG();
+
+  window.addEventListener("resize", onResize);
+  window.addEventListener("mousemove", function(e){ onPointerMove(e.clientX, e.clientY); }, {passive:true});
+  window.addEventListener("touchmove", function(e){
+    if(e.touches && e.touches[0]) onPointerMove(e.touches[0].clientX, e.touches[0].clientY);
+  }, {passive:true});
+
+  animate();
+}
+
+if(typeof THREE === "undefined"){
+  console.error("Three.js failed to load - showing static HUD only.");
+} else {
+  try{ init(); }
+  catch(err){ console.error("Neural core 3D init failed:", err); }
+}
+
+})();
+</script>
+</body>
+</html>
